@@ -376,6 +376,32 @@ class MediaController(BaseController):
             "activeTrackIds": []
         })
 
+    def style_subtitles(self, style):
+        """ Changes style of subtitles (this can be done while something is playing)
+        
+        Parameters: 
+        style: Dictionary containing the updated style definitions
+            Possible keys:
+            backgroundColor: #ffffffff
+            foregroundColor: #000000ff
+            edgeType: 'DROP SHADOW' ('NONE', 'OUTLINE', 'DROP_SHADOW', 'RAISED', 'DEPRESSED')
+            edgeColor: #00ff00ff
+            fontScale: 1 (scaling factor)
+            fontStyle: 'NORMAL' ('NORMAL', 'BOLD', 'BOLD_ITALIC', 'ITALIC')
+            fontFamily: 'Droid Sans' (see 
+                https://developers.google.com/cast/docs/receiver_apps#fonts for details)
+            fontGenericFamily: 'CURSIVE', ('SANS_SERIF', 'MONOSPACED_SANS_SERIF', 
+                'SERIF', 'MONOSPACED_SERIF', 'CASUAL', 'CURSIVE', 'SMALL_CAPITALS')
+            windowColor: #ff0000ff
+            windowRoundedCornerRadius: 10 (in px)
+            windowType: 'NONE' ('NONE', 'NORMAL', 'ROUNDED_CORNERS')
+        """
+        self._send_command({
+            MESSAGE_TYPE: TYPE_EDIT_TRACKS_INFO,
+            "textTrackStyle": style
+        })
+
+
     def _process_media_status(self, data):
         """ Processes a STATUS message. """
         self.status.update(data)
@@ -396,7 +422,7 @@ class MediaController(BaseController):
                    current_time=0, autoplay=True,
                    stream_type=STREAM_TYPE_BUFFERED,
                    metadata=None, subtitles=None, subtitles_lang='en-US',
-                   subtitles_mime='text/vtt', subtitles_id=0):
+                   subtitles_mime='text/vtt', subtitles_id=0, subtitles_style={}):
         """
         Plays media on the Chromecast. Start default media receiver if not
         already started.
@@ -415,6 +441,7 @@ class MediaController(BaseController):
         subtitles_lang: str / list - language(s) for subtitle(s).
         subtitles_mime: str / list - mimetype(s) of subtitle(s).
         subtitles_id: int /list - id (int) of subtitle to be loaded.
+        subtitles_style: dict (see function 'style_subtitles' for details)
         metadata: dict - media metadata object, one of the following:
             GenericMediaMetadata, MovieMediaMetadata, TvShowMediaMetadata,
             MusicTrackMediaMetadata, PhotoMediaMetadata.
@@ -479,6 +506,8 @@ class MediaController(BaseController):
                     'name': "{} - {} Subtitle".format(subtitles_lang[i], subtitles_id[i])
                     })
             msg['media']['tracks'] = sub_msg
+            if subtitles_style:
+                msg['media']['textTrackStyle'] = subtitles_style
         self.send_message(msg, inc_session_id=True)
 
     def tear_down(self):
