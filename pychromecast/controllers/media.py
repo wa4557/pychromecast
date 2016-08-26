@@ -401,7 +401,6 @@ class MediaController(BaseController):
             "textTrackStyle": style
         })
 
-
     def _process_media_status(self, data):
         """ Processes a STATUS message. """
         self.status.update(data)
@@ -421,8 +420,8 @@ class MediaController(BaseController):
     def play_media(self, url, content_type, title=None, thumb=None,
                    current_time=0, autoplay=True,
                    stream_type=STREAM_TYPE_BUFFERED,
-                   metadata=None, subtitles=None, subtitles_lang='en-US',
-                   subtitles_mime='text/vtt', subtitles_id=0, subtitles_style={}):
+                   metadata=None, subtitles=None, subtitles_lang=['en-US'],
+                   subtitles_mime=['text/vtt'], subtitles_id=[0], subtitles_style={}):
         """
         Plays media on the Chromecast. Start default media receiver if not
         already started.
@@ -437,10 +436,10 @@ class MediaController(BaseController):
         autoplay: bool - whether the media will automatically play.
         stream_type: str - describes the type of media artifact as one of the
             following: "NONE", "BUFFERED", "LIVE".
-        subtitles: str / list - url(s) of subtitle file to be shown on chromecast.
-        subtitles_lang: str / list - language(s) for subtitle(s).
-        subtitles_mime: str / list - mimetype(s) of subtitle(s).
-        subtitles_id: int /list - id (int) of subtitle to be loaded.
+        subtitles: list - url(s) of subtitle file to be shown on chromecast.
+        subtitles_lang: list - language(s) for subtitle(s).
+        subtitles_mime: list - mimetype(s) of subtitle(s).
+        subtitles_id: list - id(s) (int) of subtitle to be loaded.
         subtitles_style: dict (see function 'style_subtitles' for details)
         metadata: dict - media metadata object, one of the following:
             GenericMediaMetadata, MovieMediaMetadata, TvShowMediaMetadata,
@@ -476,24 +475,6 @@ class MediaController(BaseController):
 
             msg['media']['metadata']['images'].append({'url': thumb})
         if subtitles:
-            if isinstance(subtitles, str):
-                subtitles = list(subtitles)
-            if isinstance(subtitles_lang, str):
-                subtitles_lang = list(subtitles_lang)
-            if len(subtitles_lang) < len(subtitles):
-                diff = len(subtitles)-len(subtitles_lang)
-                subtitles_lang += ['en-US']*diff
-            if isinstance(subtitles_mime, str):
-                subtitles_mime = list(subtitles_mime)
-            if len(subtitles_mime) < len(subtitles):
-                diff = len(subtitles)-len(subtitles_mime)
-                subtitles_mime += ['text/vtt']*diff
-            if isinstance(subtitle_id, int):
-                subtitles_id = list(subtitles_id)
-            if len(subtitles_id) < len(subtitles):
-                max_ctr = max(subtitles_id)
-                diff = len(subtitles)-len(subtitles_id)
-                subtitles_id += list(range(int(max_ctr), int(max_ctr)+diff))
             sub_msg = []
             for i, sub in enumerate(subtitles):
                 sub_msg.append({
