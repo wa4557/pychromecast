@@ -396,7 +396,7 @@ class MediaController(BaseController):
                    current_time=0, autoplay=True,
                    stream_type=STREAM_TYPE_BUFFERED,
                    metadata=None, subtitles=None, subtitles_lang='en-US',
-                   subtitles_mime='text/vtt', subtitle_id=1):
+                   subtitles_mime='text/vtt', subtitles_id=0):
         """
         Plays media on the Chromecast. Start default media receiver if not
         already started.
@@ -411,10 +411,10 @@ class MediaController(BaseController):
         autoplay: bool - whether the media will automatically play.
         stream_type: str - describes the type of media artifact as one of the
             following: "NONE", "BUFFERED", "LIVE".
-        subtitles: str - url of subtitle file to be shown on chromecast.
-        subtitles_lang: str - language for subtitles.
-        subtitles_mime: str - mimetype of subtitles.
-        subtitle_id: int - id of subtitle to be loaded.
+        subtitles: str / list - url(s) of subtitle file to be shown on chromecast.
+        subtitles_lang: str / list - language(s) for subtitle(s).
+        subtitles_mime: str / list - mimetype(s) of subtitle(s).
+        subtitles_id: int /list - id (int) of subtitle to be loaded.
         metadata: dict - media metadata object, one of the following:
             GenericMediaMetadata, MovieMediaMetadata, TvShowMediaMetadata,
             MusicTrackMediaMetadata, PhotoMediaMetadata.
@@ -449,15 +449,35 @@ class MediaController(BaseController):
 
             msg['media']['metadata']['images'].append({'url': thumb})
         if subtitles:
-            sub_msg = [{
-                'trackId': subtitle_id,
-                'trackContentId': subtitles,
-                'language': subtitles_lang,
-                'subtype': 'SUBTITLES',
-                'type': 'TEXT',
-                'trackContentType': subtitles_mime,
-                'name': "{} - {} Subtitle".format(subtitles_lang, subtitle_id)
-                }]
+            if isinstance(subtitles, str):
+                subtitles = list(subtitles)
+            if isinstance(subtitles_lang, str):
+                subtitles_lang = list(subtitles_lang)
+            if len(subtitles_lang) < len(subtitles):
+                diff = len(subtitles)-len(subtitles_lang)
+                subtitles_lang += ['en-US']*diff
+            if isinstance(subtitles_mime, str):
+                subtitles_mime = list(subtitles_mime)
+            if len(subtitles_mime) < len(subtitles):
+                diff = len(subtitles)-len(subtitles_mime)
+                subtitles_mime += ['text/vtt']*diff
+            if isinstance(subtitle_id, int):
+                subtitles_id = list(subtitles_id)
+            if len(subtitles_id) < len(subtitles):
+                max_ctr = max(subtitles_id)
+                diff = len(subtitles)-len(subtitles_id)
+                subtitles_id += list(range(int(max_ctr), int(max_ctr)+diff))
+            sub_msg = []
+            for i, sub in enumerate(subtitles):
+                sub_msg.append({
+                    'trackId': subtitles_id[i],
+                    'trackContentId': sub,
+                    'language': subtitles_lang[i],
+                    'subtype': 'SUBTITLES',
+                    'type': 'TEXT',
+                    'trackContentType': subtitles_mime[i],
+                    'name': "{} - {} Subtitle".format(subtitles_lang[i], subtitles_id[i])
+                    })
             msg['media']['tracks'] = sub_msg
         self.send_message(msg, inc_session_id=True)
 
